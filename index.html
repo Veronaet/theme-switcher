@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extreme Moto Stunt Racer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            font-family: 'Arial', sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+        .game-ui {
+            position: absolute;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-weight: bold;
+        }
+        #score-display {
+            top: 20px;
+            left: 20px;
+            font-size: 28px;
+        }
+        #level-display {
+            top: 60px;
+            left: 20px;
+            font-size: 22px;
+            color: #f5c542;
+        }
+        #time-display {
+            top: 20px;
+            right: 90px;
+            font-size: 28px;
+        }
+        #boost-meter {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            width: 200px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 2px solid #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #boost-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #ff9900, #ff0000);
+            transition: width 0.2s;
+        }
+        #boost-label {
+            position: absolute;
+            bottom: 55px;
+            left: 20px;
+            font-size: 18px;
+            color: #ff9900;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+        #lives-display {
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+        }
+        .life-icon {
+            width: 25px;
+            height: 25px;
+            margin-left: 5px;
+            background-color: #ff3333;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 5px #ff0000;
+        }
+        #pause-btn {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        #control-hints {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .control-key {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+        }
+        .control-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            text-align: center;
+            margin-top: 5px;
+        }
+        #game-over, #level-complete, #game-start {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            border: 2px solid #ff5722;
+            min-width: 300px;
+        }
+        .overlay-title {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #ff5722;
+            text-shadow: 0 0 10px rgba(255, 87, 34, 0.5);
+        }
+        .game-btn {
+            background: linear-gradient(to bottom, #ff5722, #e64a19);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 18px;
+            margin: 15px 5px;
+            cursor: pointer;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #bf360c, 0 5px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+        }
+        .game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #bf360c, 0 8px 15px rgba(0, 0, 0, 0.5);
+        }
+        .game-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #bf360c, 0 3px 5px rgba(0, 0, 0, 0.5);
+        }
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 20px;
+        }
+        .score-label {
+            color: #ffc107;
+        }
+        .score-value {
+            color: white;
+        }
+        .total-score {
+            margin-top: 15px;
+            font-size: 24px;
+            color: #4caf50;
+            font-weight: bold;
+        }
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #loading-bar-container {
+            width: 300px;
+            height: 20px;
+            border: 2px solid #ff5722;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        #loading-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(to right, #ff9900, #ff5722);
+            transition: width 0.5s;
+        }
+        #loading-text {
+            color: white;
+            font-size: 24px;
+            margin-top: 10px;
+        }
+        #loading-logo {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff5722;
+            text-shadow: 0 0 10px rgba(255, 87, 34, 0.5);
+            margin-bottom: 20px;
+        }
+        #mobile-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none; /* Hidden by default, shown on mobile */
+            gap: 150px;
+        }
+        .mobile-btn {
+            width: 70px;
+            height: 70px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+        }
+        @media (max-width: 768px) {
+            #mobile-controls {
+                display: flex;
+            }
+            #control-hints {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- UI Elements -->
+        <div id="score-display" class="game-ui">Score: 0</div>
+        <div id="level-display" class="game-ui">Level: 1</div>
+        <div id="time-display" class="game-ui">00:00</div>
+        <div id="lives-display" class="game-ui">
+            Lives:
+            <div class="life-icon"></div>
+            <div class="life-icon"></div>
+            <div class="life-icon"></div>
+        </div>
+        
+        <div id="boost-label">BOOST</div>
+        <div id="boost-meter">
+            <div id="boost-fill"></div>
+        </div>
+        
+        <button id="pause-btn">II</button>
+        
+        <div id="control-hints">
+            <div>
+                <div class="control-key">↑</div>
+                <div class="control-label">Jump</div>
+            </div>
+            <div>
+                <div class="control-key">←</div>
+                <div class="control-label">Left</div>
+            </div>
+            <div>
+                <div class="control-key">→</div>
+                <div class="control-label">Right</div>
+            </div>
+            <div>
+                <div class="control-key">Z</div>
+                <div class="control-label">Boost</div>
+            </div>
+        </div>
+        
+        <div id="mobile-controls">
+            <div class="mobile-btn" id="mobile-jump">Jump</div>
+            <div class="mobile-btn" id="mobile-boost">Boost</div>
+        </div>
+        
+        <!-- Overlays -->
+        <div id="game-over">
+            <h2 class="overlay-title">Game Over!</h2>
+            <div class="score-row">
+                <span class="score-label">Distance:</span>
+                <span class="score-value" id="final-distance">0m</span>
+            </div>
+            <div class="score-row">
+                <span class="score-label">Time:</span>
+                <span class="score-value" id="final-time">00:00</span>
+            </div>
+            <div class="score-row">
+                <span class="score-label">Stunts:</span>
+                <span class="score-value" id="final-stunts">0</span>
+            </div>
+            <div class="total-score" id="final-score">Total Score: 0</div>
+            <button class="game-btn" id="restart-btn">Play Again</button>
+            <button class="game-btn" id="menu-btn">Main Menu</button>
+        </div>
+        
+        <div id="level-complete">
+            <h2 class="overlay-title">Level Complete!</h2>
+            <div class="score-row">
+                <span class="score-label">Distance:</span>
+                <span class="score-value" id="level-distance">0m</span>
+            </div>
+            <div class="score-row">
+                <span class="score-label">Time:</span>
+                <span class="score-value" id="level-time">00:00</span>
+            </div>
+            <div class="score-row">
+                <span class="score-label">Stunts:</span>
+                <span class="score-value" id="level-stunts">0</span>
+            </div>
+            <div class="total-score" id="level-score">Total Score: 0</div>
+            <button class="game-btn" id="next-level-btn">Next Level</button>
+        </div>
+        
+        <div id="game-start">
+            <h2 class="overlay-title">Extreme Moto Stunt Racer</h2>
+            <p>Race through challenging tracks, perform stunts, and beat your opponents!</p>
+            <button class="game-btn" id="start-btn">Start Game</button>
+            <div class="control-info" style="margin-top: 20px; font-size: 14px; color: #aaa;">
+                Use arrow keys to move and jump, Z for boost
+            </div>
+        </div>
+        
+        <div id="loading-screen">
+            <div id="loading-logo">EXTREME MOTO STUNT RACER</div>
+            <div id="loading-bar-container">
+                <div id="loading-bar"></div>
+            </div>
+            <div id="loading-text">Loading... 0%</div>
+        </div>
+    </div>
+
+    <script>
+        // Game setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI elements
+        const scoreDisplay = document.getElementById('score-display');
+        const levelDisplay = document.getElementById('level-display');
+        const timeDisplay = document.getElementById('time-display');
+        const livesDisplay = document.getElementById('lives-display');
+        const boostMeter = document.getElementById('boost-fill');
+        
+        // Overlays
+        const gameOverScreen = document.getElementById('game-over');
+        const levelCompleteScreen = document.getElementById('level-complete');
+        const gameStartScreen = document.getElementById('game-start');
+        const loadingScreen = document.getElementById('loading-screen');
+        
+        // Final score elements
+        const finalScoreDisplay = document.getElementById('final-score');
+        const finalDistanceDisplay = document.getElementById('final-distance');
+        const finalTimeDisplay = document.getElementById('final-time');
+        const finalStuntsDisplay = document.getElementById('final-stunts');
+        
+        // Level score elements
+        const levelScoreDisplay = document.getElementById('level-score');
+        const levelDistanceDisplay = document.getElementById('level-distance');
+        const levelTimeDisplay = document.getElementById('level-time');
+        const levelStuntsDisplay = document.getElementById('level-stunts');
+        
+        // Buttons
+        const restartBtn = document.getElementById('restart-btn');
+        const menuBtn = document.getElementById('menu-btn');
+        const nextLevelBtn = document.getElementById('next-level-btn');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        
+        // Mobile controls
+        const mobileJumpBtn = document.getElementById('mobile-jump');
+        const mobileBoostBtn = document.getElementById('mobile-boost');
+        
+        // Loading bar
+        const loadingBar = document.getElementById('loading-bar');
+        const loadingText = document.getElementById('loading-text');
+        
+        // Set canvas dimensions
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Game variables
+        let score = 0;
+        let level = 1;
+        let lives = 3;
+        let gameTime = 0;
+        let distance = 0;
+        let stuntCount = 0;
+        let boostAmount = 0;
+        let isGameOver = false;
+        let isPaused = false;
+        let isLevelComplete = false;
+        let isLoading = true;
+        let isGameStarted = false;
+        let isInAir = false;
+        let isBoosting = false;
+        let performingStunt = false;
+        let lastStuntTime = 0;
+        let animationId;
+        let lastTimestamp = 0;
+        let gameSpeed = 5;
+        let gravity = 0.6;
+        let jumpForce = 14;
+        let boostSpeed = 2;
+        let boostDecayRate = 0.5;
+        let boostIncreaseRate = 10;
+        
+        // Assets
+        const images = {
+            playerBike: new Image(),
+            opponentBike: new Image(),
+            background1: new Image(),
+            background2: new Image(),
+            background3: new Image(),
+            track: new Image(),
+            trackLoop: new Image(),
+            finishLine: new Image(),
+            particles: new Image(),
+            boostFlame: new Image()
+        };
+        
+        const sounds = {
+            engine: null,
+            jump: null,
+            crash: null,
+            boost: null,
+            stunt: null,
+            levelComplete: null,
+            gameOver: null,
+            background: null
+        };
+        
+        // Resize canvas on window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Player motorcycle
+        const player = {
+            x: canvas.width / 4,
+            y: canvas.height / 2,
+            width: 60,
+            height: 30,
+            velocityX: 0,
+            velocityY: 0,
+            rotation: 0,
+            rotationVelocity: 0,
+            isOnGround: false,
+            frameX: 0,  // For sprite animation
+            frameY: 0,  // For sprite animation
+            frameWidth: 120,  // Width of a single frame in sprite sheet
+            frameHeight: 80,  // Height of a single frame in sprite sheet
+            frameCount: 4,  // Number of animation frames
+            frameTimer: 0,
+            color: 'red'
+        };
+        
+        // AI opponents
+        const opponents = [];
+        
+        // Camera
+        const camera = {
+            x: 0,
+            y: 0,
+            width: canvas.width,
+            height: canvas.height,
+            targetX: player.x - canvas.width / 3
+        };
+        
+        // Particle effects
+        const particles = [];
+        
+        // Track segments
+        const trackSegments = [];
+        
+        // Checkpoints
+        const checkpoints = [];
+        
+        // Level data
+        const levels = [
+            {
+                name: "Training Ground",
+                background: "background1",
+                trackColor: "#ff4d4d",
+                loopCount: 2,
+                rampCount: 1,
+                length: 5000,
+                opponents: 1
+            },
+            {
+                name: "Canyon Run",
+                background: "background2",
+                trackColor: "#4d94ff",
+                loopCount: 3,
+                rampCount: 2,
+                length: 8000,
+                opponents: 2
+            },
+            {
+                name: "Mountain Extreme",
+                background: "background3",
+                trackColor: "#9933ff",
+                loopCount: 4,
+                rampCount: 3,
+                length: 10000,
+                opponents: 3
+            }
+        ];
+        
+        // Current level data
+        let currentLevel = levels[0];
+        
+        // Simulating asset loading
+        function simulateLoading() {
+            let progress = 0;
+            const loadingInterval = setInterval(() => {
+                progress += Math.random() * 5;
+                if (progress > 100) progress = 100;
+                
+                loadingBar.style.width = `${progress}%`;
+                loadingText.textContent = `Loading... ${Math.floor(progress)}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(loadingInterval);
+                    setTimeout(() => {
+                        isLoading = false;
+                        loadingScreen.style.display = 'none';
+                        gameStartScreen.style.display = 'block';
+                    }, 500);
+                }
+            }, 200);
+        }
+        
+        // Initialize the game
+        function init() {
+            // Simulate loading
+            simulateLoading();
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Keyboard controls
+            const keys = {
+                ArrowUp: false,
+                ArrowLeft: false,
+                ArrowRight: false,
+                KeyZ: false,
+                KeyX: false,
+                Escape: false
+            };
+            
+            window.addEventListener('keydown', (e) => {
+                if (keys.hasOwnProperty(e.code)) {
+                    keys[e.code] = true;
+                    e.preventDefault();
+                }
+                
+                // Pause game with Escape key
+                if (e.code === 'Escape') {
+                    togglePause();
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                if (keys.hasOwnProperty(e.code)) {
+                    keys[e.code] = false;
+                    e.preventDefault();
+                }
+            });
+            
+            // Process inputs every frame
+            function processInputs() {
+                // Jump
+                if ((keys.ArrowUp || mobileJumpActive) && player.isOnGround) {
+                    player.velocityY = -jumpForce;
+                    player.isOnGround = false;
+                    isInAir = true;
+                    // Jump sound would play here
+                }
+                
+                // Left/Right movement
+                if (keys.ArrowLeft) {
+                    player.velocityX = -gameSpeed;
+                    player.rotation -= 0.02;
+                }
+                else if (keys.ArrowRight) {
+                    player.velocityX = gameSpeed;
+                    player.rotation += 0.02;
+                }
+                else {
+                    player.velocityX *= 0.9; // Friction
+                }
+                
+                // Boost
+                if ((keys.KeyZ || keys.KeyX || mobileBoostActive) && boostAmount > 0) {
+                    isBoosting = true;
+                    boostAmount -= boostDecayRate;
+                    if (boostAmount < 0) boostAmount = 0;
+                    // Boost sound would play here
+                }
+                else {
+                    isBoosting = false;
+                }
+                
+                // Update boost meter UI
+                boostMeter.style.width = `${boostAmount}%`;
+                
+                // Perform stunt if in air and not recently stunted
+                if (isInAir && !performingStunt && gameTime - lastStuntTime > 1000) {
+                    if (keys.KeyX) {
+                        performStunt();
+                    }
+                }
+            }
+            
+            // Mobile controls
+            let mobileJumpActive = false;
+            let mobileBoostActive = false;
+            
+            mobileJumpBtn.addEventListener('touchstart', () => {
+                mobileJumpActive = true;
+            });
+            
+            mobileJumpBtn.addEventListener('touchend', () => {
+                mobileJumpActive = false;
+            });
+            
+            mobileBoostBtn.addEventListener('touchstart', () => {
+                mobileBoostActive = true;
+            });
+            
+            mobileBoostBtn.addEventListener('touchend', () => {
+                mobileBoostActive = false;
+            });
+            
+            // Button event listeners
+            pauseBtn.addEventListener('click', togglePause);
+            restartBtn.addEventListener('click', restartGame);
+            menuBtn.addEventListener('click', showMainMenu);
+            nextLevelBtn.addEventListener('click', loadNextLevel);
+            startBtn.addEventListener('click', startGame);
+            
+            // Make processInputs available globally
+            window.processInputs = processInputs;
+        }
+        
+        // Toggle pause
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseBtn.innerHTML = isPaused ? '▶' : 'II';
+            
+            if (!isPaused && !isGameOver && !isLevelComplete && isGameStarted) {
+                animate(lastTimestamp);
+            }
+        }
+        
+        // Show main menu
+        function showMainMenu() {
+            gameOverScreen.style.display = 'none';
+            levelCompleteScreen.style.display = 'none';
+            gameStartScreen.style.display = 'block';
+            
+            isGameOver = false;
+            isLevelComplete = false;
+            isGameStarted = false;
+            
+            level = 1;
+            currentLevel = levels[0];
+            
+            cancelAnimationFrame(animationId);
+        }
+        
+        // Start the game
+        function startGame() {
+            gameStartScreen.style.display = 'none';
+            
+            isGameStarted = true;
+            isGameOver = false;
+            isLevelComplete = false;
+            isPaused = false;
+            
+            score = 0;
+            lives = 3;
+            gameTime = 0;
+            distance = 0;
+            stuntCount = 0;
+            boostAmount = 100;
+            
+            updateScore();
+            updateLives();
+            updateLevel();
+            
+            resetPlayer();
+            generateLevel(currentLevel);
+            
+            lastTimestamp = performance.now();
+            animate(lastTimestamp);
+        }
+        
+        // Reset player
+        function resetPlayer() {
+            player.x = canvas.width / 4;
+            player.y = canvas.height / 2;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.rotation = 0;
+            player.rotationVelocity = 0;
+            player.isOnGround = false;
+            
+            camera.x = 0;
+            camera.targetX = player.x - canvas.width / 3;
+        }
+        
+        // Generate level
+        function generateLevel(levelData) {
+            // Clear existing track and opponents
+            trackSegments.length = 0;
+            opponents.length = 0;
+            checkpoints.length = 0;
+            
+            // Generate track based on level data
+            let x = 0;
+            let y = canvas.height - 200;
+            
+            // Start with a flat section
+            addTrackSegment(x, y, 500, 20, levelData.trackColor, 'ground');
+            x += 500;
+            
+            // Add loops based on level data
+            for (let i = 0; i < levelData.loopCount; i++) {
+                // Add some distance between features
+                addTrackSegment(x, y, 300, 20, levelData.trackColor, 'ground');
+                x += 300;
+                
+                // Add a loop
+                x = addLoop(x, y, 150, levelData.trackColor);
+                
+                // Add flat section after loop
+                addTrackSegment(x, y, 400, 20, levelData.trackColor, 'ground');
+                x += 400;
+            }
+            
+            // Add ramps based on level data
+            for (let i = 0; i < levelData.rampCount; i++) {
+                // Add some distance between features
+                addTrackSegment(x, y, 300, 20, levelData.trackColor, 'ground');
+                x += 300;
+                
+                // Add a ramp
+                x = addRamp(x, y, 100, 80, levelData.trackColor);
+                
+                // Add flat section after ramp
+                addTrackSegment(x, y, 400, 20, levelData.trackColor, 'ground');
+                x += 400;
+            }
+            
+            // Add final flat section
+            addTrackSegment(x, y, 500, 20, levelData.trackColor, 'ground');
+            x += 500;
+            
+            // Add finish line
+            addTrackSegment(x, y, 100, 20, '#00ff00', 'finish');
+            
+            // Add checkpoints
+            addCheckpoints(levelData.length);
+            
+            // Add opponents based on level data
+            for (let i = 0; i < levelData.opponents; i++) {
+                addOpponent(i);
+            }
+        }
+        
+        // Add a track segment
+        function addTrackSegment(x, y, width, height, color, type) {
+            trackSegments.push({
+                x, y, width, height, color, type,
+                points: [
+                    { x, y },
+                    { x + width, y },
+                    { x + width, y + height },
+                    { x, y + height }
+                ]
+            });
+        }
+        
+        // Add a loop
+        function addLoop(startX, baseY, radius, color) {
+            const segmentCount = 20;
+            const segmentAngle = Math.PI / segmentCount;
+            let prevX = startX;
+            let prevY = baseY;
+            
+            for (let i = 0; i <= segmentCount * 2; i++) {
+                const angle = i * segmentAngle;
+                const x = startX + Math.cos(angle) * radius;
+                const y = baseY - Math.sin(angle) * radius;
+                
+                // Connect prev point to current with line segment
+                if (i > 0) {
+                    const width = Math.sqrt(Math.pow(x - prevX, 2) + Math.pow(y - prevY, 2));
+                    const rotation = Math.atan2(y - prevY, x - prevX);
+                    
+                    trackSegments.push({
+                        x: prevX,
+                        y: prevY,
+                        width,
+                        height: 20,
+                        color,
+                        type: 'loop',
+                        rotation,
+                        angle,
+                        points: [
+                            { x: prevX, y: prevY },
+                            { x, y },
+                            { x, y + 20 },
+                            { x: prevX, y: prevY + 20 }
+                        ]
+                    });
+                }
+                
+                prevX = x;
+                prevY = y;
+            }
+            
+            return prevX;
+        }
+        
+        // Add a ramp
+        function addRamp(x, y, width, height, color) {
+            // Upward ramp
+            trackSegments.push({
+                x,
+                y: y - height,
+                width,
+                height: height + 20,
+                color,
+                type: 'ramp',
+                points: [
+                    { x, y },
+                    { x + width, y - height },
+                    { x + width, y - height + 20 },
+                    { x, y + 20 }
+                ]
+            });
+            
+            return x + width;
+        }
+        
+        // Add checkpoints for progress tracking
+        function addCheckpoints(levelLength) {
+            const checkpointCount = 10;
+            const spacing = levelLength / checkpointCount;
+            
+            for (let i = 0; i < checkpointCount; i++) {
+                checkpoints.push({
+                    x: spacing * i,
+                    passed: false
+                });
+            }
+        }
+        
+        // Add an opponent
+        function addOpponent(index) {
+            opponents.push({
+                x: canvas.width / 2 + (index * 200),
+                y: canvas.height / 2,
+                width: 60,
